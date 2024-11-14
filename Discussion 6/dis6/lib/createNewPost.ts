@@ -1,4 +1,5 @@
 "use server";
+import getCollection, { POSTS_COLLECTION } from "@/db";
 import { PostProps } from "@/types";
 
 export default async function createNewPost(
@@ -12,5 +13,24 @@ export default async function createNewPost(
         downvotes: 0,
     };
 
-    return { ...p, id: "newId" };
+    const postsCollection = await getCollection(POSTS_COLLECTION);
+    const res = await postsCollection.insertOne(p);
+
+    if (!res.acknowledged) {
+        return null;
+    }
+
+    let post;
+    try {
+        post = {
+            ...p,
+            id: res.insertedId.toHexString(),
+        };
+
+        delete post._id;
+
+        return post;
+    } catch {
+        return null;
+    }
 }
